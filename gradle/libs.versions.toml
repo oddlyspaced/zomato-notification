@@ -1,8 +1,8 @@
 [versions]
 agp = "8.3.2"
 converterGson = "2.9.0"
-hiltAndroidCompiler = "2.44"
-hiltAndroid = "2.44"
+hiltAndroidCompiler = "2.48"
+hiltAndroid = "2.48"
 kotlin = "1.9.0"
 coreKtx = "1.13.1"
 junit = "4.13.2"
