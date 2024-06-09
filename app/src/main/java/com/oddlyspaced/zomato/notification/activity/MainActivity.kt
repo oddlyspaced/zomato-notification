@@ -17,6 +17,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
@@ -49,6 +55,7 @@ class MainActivity : ComponentActivity() {
                     Column {
                         NotificationSection(mainVM, requestNotifPerm)
                         CommunicationSection(applicationContext)
+                        PostList(mainVM)
                     }
                 }
             }
@@ -86,4 +93,28 @@ fun CommunicationSection(
             Text("Test Service Communication")
         }
     }
+}
+
+@Composable
+fun PostList(
+    vm: MainViewModel = viewModel(),
+) {
+    val orderHistory by vm.orderHistory.collectAsState()
+    var launchEffectKey by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(key1 = launchEffectKey) {
+        if (launchEffectKey) {
+            vm.fetchOrderHistory()
+        }
+    }
+
+    Button(onClick = {
+        launchEffectKey = true
+    }) {
+        Text("Fetch")
+    }
+
+    Text("${orderHistory.status}!")
 }
