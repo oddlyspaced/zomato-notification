@@ -7,12 +7,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oddlyspaced.zomato.notification.api.Api
-import com.oddlyspaced.zomato.notification.api.model.OrderHistory
+import com.oddlyspaced.zomato.notification.api.model.OrderHistoryItem
+import com.oddlyspaced.zomato.notification.api.model.OrderHistorySnippet
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import javax.inject.Inject
 
 /**
@@ -25,23 +25,50 @@ class MainViewModel @Inject constructor(private val api: Api) : ViewModel() {
 
     companion object {
         private const val TAG = "MainViewModel"
+        const val STATUS_NOT_FETCHED = 1
+        const val STATUS_FETCH_ERROR = 2
+        const val STATUS_FETCH_SUCCESS = 3
     }
 
     var isNotificationPermissionGranted by mutableStateOf(false)
 
-    private val _orderHistory: MutableStateFlow<OrderHistory> =
-        MutableStateFlow(OrderHistory("Not Fetched!"))
-    val orderHistory: StateFlow<OrderHistory> = _orderHistory
+    private val _orderHistory: MutableStateFlow<List<OrderHistoryItem>> = MutableStateFlow(listOf())
+    val orderHistory: StateFlow<List<OrderHistoryItem>> = _orderHistory
+
+    private val _orderHistoryFetchStatus: MutableStateFlow<Int> = MutableStateFlow(
+        STATUS_NOT_FETCHED
+    )
+    val orderHistoryFetchStatus: StateFlow<Int> = _orderHistoryFetchStatus
 
     fun fetchOrderHistory() {
         viewModelScope.launch {
             try {
                 val fetchedOrderHistory = api.getOrderHistory()
-                _orderHistory.value = fetchedOrderHistory
+                val items = arrayListOf<OrderHistoryItem>()
+                fetchedOrderHistory.results.forEach { result ->
+                    result.orderHistorySnippet?.let { snippet ->
+                        items.add(
+                            parseOrderHistoryResult(snippet)
+                        )
+                    }
+                }
+                _orderHistory.value = items
+                _orderHistoryFetchStatus.value = STATUS_FETCH_SUCCESS
             } catch (e: Exception) {
                 Log.d(TAG, "Error in fetching order history!")
                 Log.d(TAG, e.stackTraceToString())
+                _orderHistoryFetchStatus.value = STATUS_FETCH_ERROR
             }
         }
     }
+}
+
+fun parseOrderHistoryResult(result: OrderHistorySnippet): OrderHistoryItem {
+    var title = result.topContainer.title.text
+    title = title.replace("<medium-400|{grey-900|", "").replace("}>", "")
+    var orderId = result.clickAction.deeplink.url
+    orderId = orderId.replace("zomato://delivery/", "")
+    val orderStatus = result.topContainer.tag?.title?.text ?: "Unknown"
+    val orderTime = result.bottomContainer.title.text
+    return OrderHistoryItem(title, orderId, orderTime, orderStatus)
 }
