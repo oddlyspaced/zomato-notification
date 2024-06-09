@@ -44,36 +44,52 @@
             android:textSize="16sp" />
     </LinearLayout>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:weightSum="1">
+        android:layout_height="wrap_content">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="4dp"
-            android:layout_weight="0.4"
-            android:alpha="0.4"
-            android:background="@drawable/shape_line" />
-
-        <ImageView
-            android:layout_width="32dp"
+            android:layout_width="48dp"
             android:layout_height="32dp"
-            android:src="@drawable/ic_checkpoint_restaurant" />
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="12dp"
+            android:elevation="1dp"
+            android:src="@drawable/ic_rider_ev" />
 
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="4dp"
-            android:layout_weight="0.6"
-            android:alpha="0.2"
-            android:background="@drawable/shape_line"
-            android:backgroundTint="@android:color/darker_gray" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:weightSum="1">
 
-        <ImageView
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_checkpoint_home" />
-    </LinearLayout>
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="4dp"
+                android:layout_weight="0.4"
+                android:alpha="0.4"
+                android:background="@drawable/shape_line" />
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_checkpoint_restaurant" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="4dp"
+                android:layout_weight="0.6"
+                android:alpha="0.2"
+                android:background="@drawable/shape_line"
+                android:backgroundTint="@android:color/darker_gray" />
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_checkpoint_home" />
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
 </LinearLayout>
