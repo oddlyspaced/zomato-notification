@@ -22,7 +22,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
 import com.oddlyspaced.zomato.notification.vm.MainViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val mainVM: MainViewModel by viewModels()
