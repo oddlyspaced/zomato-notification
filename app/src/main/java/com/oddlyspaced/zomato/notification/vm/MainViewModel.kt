@@ -28,6 +28,7 @@ class MainViewModel @Inject constructor(private val api: Api) : ViewModel() {
         const val STATUS_NOT_FETCHED = 1
         const val STATUS_FETCH_ERROR = 2
         const val STATUS_FETCH_SUCCESS = 3
+        const val STATUS_FETCHING = 4
     }
 
     var isNotificationPermissionGranted by mutableStateOf(false)
@@ -41,6 +42,7 @@ class MainViewModel @Inject constructor(private val api: Api) : ViewModel() {
     val orderHistoryFetchStatus: StateFlow<Int> = _orderHistoryFetchStatus
 
     fun fetchOrderHistory() {
+        _orderHistoryFetchStatus.value = STATUS_FETCHING
         viewModelScope.launch {
             try {
                 val fetchedOrderHistory = api.getOrderHistory()
@@ -67,7 +69,7 @@ fun parseOrderHistoryResult(result: OrderHistorySnippet): OrderHistoryItem {
     var title = result.topContainer.title.text
     title = title.replace("<medium-400|{grey-900|", "").replace("}>", "")
     var orderId = result.clickAction.deeplink.url
-    orderId = orderId.replace("zomato://delivery/", "")
+    orderId = orderId.replace("zomato://delivery/", "").replace("zomato://order_summary/", "")
     val orderStatus = result.topContainer.tag?.title?.text ?: "Unknown"
     val orderTime = result.bottomContainer.title.text
     return OrderHistoryItem(title, orderId, orderTime, orderStatus)

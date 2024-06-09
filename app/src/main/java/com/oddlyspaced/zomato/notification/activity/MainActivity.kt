@@ -10,8 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,11 +30,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
 import com.oddlyspaced.zomato.notification.vm.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,9 +62,11 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
                         NotificationSection(mainVM, requestNotifPerm)
-                        CommunicationSection(applicationContext)
                         PostList(mainVM)
                     }
                 }
@@ -63,21 +75,33 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
+@Composable
+fun SectionTitle(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text.uppercase(Locale.ROOT),
+        fontSize = 10.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 2.sp,
+        modifier = modifier
+    )
+}
+
 @Composable
 fun NotificationSection(
     vm: MainViewModel = viewModel(),
     requestPermission: ActivityResultLauncher<String>
 ) {
     Column {
+        SectionTitle(text = "Notification")
         Text(
             text = "Notification Permission ${if (vm.isNotificationPermissionGranted) "Granted" else "Not Granted"}",
+            modifier = Modifier.padding(top = 8.dp)
         )
-        if (!vm.isNotificationPermissionGranted) {
-            Button(onClick = {
-                requestPermission.launch(POST_NOTIFICATIONS)
-            }) {
-                Text("Grant Notification Permission")
-            }
+        Button(onClick = {
+            requestPermission.launch(POST_NOTIFICATIONS)
+        }, enabled = !vm.isNotificationPermissionGranted, modifier = Modifier.padding(top = 4.dp)) {
+            Text("Grant Notification Permission")
         }
     }
 }
@@ -100,6 +124,8 @@ fun PostList(
     vm: MainViewModel = viewModel(),
 ) {
     val orderHistory by vm.orderHistory.collectAsState()
+    val orderHistoryFetchStatus by vm.orderHistoryFetchStatus.collectAsState()
+
     var launchEffectKey by remember {
         mutableStateOf(false)
     }
@@ -110,11 +136,42 @@ fun PostList(
         }
     }
 
-    Button(onClick = {
-        launchEffectKey = true
-    }) {
-        Text("Fetch")
-    }
+    Column {
+        SectionTitle(text = "Order History")
+        Text(
+            when (orderHistoryFetchStatus) {
+                MainViewModel.STATUS_NOT_FETCHED -> "Order History Not Fetched"
+                MainViewModel.STATUS_FETCH_ERROR -> "Error in fetching Order History!"
+                MainViewModel.STATUS_FETCH_SUCCESS -> "Order History fetched Successfully"
+                MainViewModel.STATUS_FETCHING -> "Fetching Order History..."
+                else -> ""
+            },
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Button(onClick = {
+            launchEffectKey = true
+        }, modifier = Modifier.padding(top = 4.dp)) {
+            Text("Fetch Orders")
+        }
 
-    Text("${orderHistory.status}!")
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            orderHistory.forEach {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.padding(top = 12.dp)
+                ) {
+                    Text(it.restaurant)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(it.orderId)
+                        Text(it.status)
+                    }
+                    Text(it.orderTime)
+                }
+
+            }
+        }
+    }
 }
