@@ -1,6 +1,7 @@
 package com.oddlyspaced.zomato.notification
 
 import android.Manifest.permission.POST_NOTIFICATIONS
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -17,6 +18,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
@@ -43,7 +45,10 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    NotificationSection(mainVM, requestNotifPerm)
+                    Column {
+                        NotificationSection(mainVM, requestNotifPerm)
+                        CommunicationSection(applicationContext)
+                    }
                 }
             }
         }
@@ -65,6 +70,19 @@ fun NotificationSection(
             }) {
                 Text("Grant Notification Permission")
             }
+        }
+    }
+}
+
+@Composable
+fun CommunicationSection(
+    context: Context
+) {
+    Column {
+        Button(onClick = {
+            context.sendBroadcast(Intent(OrderTrackService.ACTION))
+        }) {
+            Text("Test Service Communication")
         }
     }
 }

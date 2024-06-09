@@ -4,8 +4,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.IBinder
+import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.MainActivity
@@ -16,6 +20,18 @@ import com.oddlyspaced.zomato.notification.R
  * @created : 09/06/24, Sunday
  **/
 class OrderTrackService : Service() {
+
+    companion object {
+        private const val TAG = "OrderTrackService"
+        const val ACTION = "OrderTrackAction"
+    }
+
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            Log.d(TAG, "Received intent = ${intent?.action}")
+        }
+    }
+
     private fun createNotification(): NotificationCompat.Builder {
         // Create the NotificationChannel, only for API 26+
         val channelId = "foreground_service_channel"
@@ -48,6 +64,7 @@ class OrderTrackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        registerReceiver(receiver, IntentFilter(ACTION), RECEIVER_EXPORTED)
         val notification = createNotification().build()
         startForeground(1, notification)
     }
