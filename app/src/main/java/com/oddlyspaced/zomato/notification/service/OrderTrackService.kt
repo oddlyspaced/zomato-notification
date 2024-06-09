@@ -21,21 +21,25 @@ import com.oddlyspaced.zomato.notification.R
  * @created : 09/06/24, Sunday
  **/
 class OrderTrackService : Service() {
-
     companion object {
         private const val TAG = "OrderTrackService"
         const val ACTION = "OrderTrackAction"
-    }
-
-    private var progress = 0F
-    private val receiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            setRiderProgress(progress)
-            Log.d(TAG, "Received intent = ${intent?.action} ${progress++}")
-        }
+        const val CHANNEL_ID = "foreground_service_channel"
+        const val CHANNEL_NAME = "Foreground Service Channel"
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+
+    // activity to service communication
+    private val receiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            setAndShowRiderProgress(123, (orderIdProgressMap[123] ?: 0F) + 1)
+            Log.d(TAG, "Received intent = ${intent?.action}")
+        }
+    }
+
+    private val orderIdProgressMap = hashMapOf<Int, Float>()
+    private val orderIdNotificationMap = hashMapOf<Int, NotificationCompat.Builder>()
 
     private val notificationLayout by lazy {
         RemoteViews(
@@ -47,35 +51,36 @@ class OrderTrackService : Service() {
         RemoteViews(packageName, R.layout.zomato_notification_expanded)
     }
 
-    private val orderNotification by lazy { createNotification() }
-
-    private fun setRiderProgress(progress: Float) {
+    private fun setAndShowRiderProgress(orderId: Int, progress: Float) {
         // 264 MAX
         // 0 MIN
         // 92 ARRIVED WHOLE
         // 128 ON WAY START
+
         notificationLayoutExpanded.setViewLayoutMargin(
             R.id.zom_rider,
             RemoteViews.MARGIN_START,
             progress,
             TypedValue.COMPLEX_UNIT_DIP
         )
-        orderNotification.setCustomBigContentView(notificationLayoutExpanded)
-        notificationManager.notify(1, orderNotification.build())
+        orderIdProgressMap[orderId] = progress
+        orderIdNotificationMap[orderId] = createNotification()
+        orderIdNotificationMap[orderId]?.let {
+            it.setCustomBigContentView(notificationLayoutExpanded)
+            notificationManager.notify(orderId, it.build())
+        }
     }
 
     private fun createNotification(): NotificationCompat.Builder {
         // Create the NotificationChannel, only for API 26+
-        val channelId = "foreground_service_channel"
-        val channelName = "Foreground Service Channel"
         val notificationChannel =
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
+            NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(notificationChannel)
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-        return NotificationCompat.Builder(this, channelId)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_background)
             .setCustomContentView(notificationLayout)
             .setCustomBigContentView(notificationLayoutExpanded)
@@ -89,7 +94,8 @@ class OrderTrackService : Service() {
     override fun onCreate() {
         super.onCreate()
         registerReceiver(receiver, IntentFilter(ACTION), RECEIVER_EXPORTED)
-        val notification = orderNotification.build()
+        val notification =
+            NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Running").build()
         startForeground(1, notification)
     }
 
