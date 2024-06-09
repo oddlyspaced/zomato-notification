@@ -1,6 +1,7 @@
 package com.oddlyspaced.zomato.notification
 
 import android.Manifest.permission.POST_NOTIFICATIONS
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
 import com.oddlyspaced.zomato.notification.vm.MainViewModel
 
@@ -31,6 +33,9 @@ class MainActivity : ComponentActivity() {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                 mainVM.isNotificationPermissionGranted = isGranted
             }
+        val serviceIntent = Intent(this, OrderTrackService::class.java)
+        startForegroundService(serviceIntent)
+
         setContent {
             ZomatoNotificationTheme {
                 // A surface container using the 'background' color from the theme
