@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         NotificationSection(mainVM, requestNotifPerm)
+                        CommunicationSection(context = applicationContext)
                         PostList(mainVM)
                     }
                 }
@@ -111,9 +112,10 @@ fun CommunicationSection(
     context: Context
 ) {
     Column {
+        SectionTitle(text = "Service Controls")
         Button(onClick = {
             context.sendBroadcast(Intent(OrderTrackService.ACTION))
-        }) {
+        }, modifier = Modifier.padding(top = 8.dp)) {
             Text("Test Service Communication")
         }
     }

@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
+import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.activity.MainActivity
@@ -26,10 +27,41 @@ class OrderTrackService : Service() {
         const val ACTION = "OrderTrackAction"
     }
 
+    private var progress = 0F
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            Log.d(TAG, "Received intent = ${intent?.action}")
+            setRiderProgress(progress)
+            Log.d(TAG, "Received intent = ${intent?.action} ${progress++}")
         }
+    }
+
+    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+
+    private val notificationLayout by lazy {
+        RemoteViews(
+            packageName,
+            R.layout.zomato_notification_small
+        )
+    }
+    private val notificationLayoutExpanded by lazy {
+        RemoteViews(packageName, R.layout.zomato_notification_expanded)
+    }
+
+    private val orderNotification by lazy { createNotification() }
+
+    private fun setRiderProgress(progress: Float) {
+        // 264 MAX
+        // 0 MIN
+        // 92 ARRIVED WHOLE
+        // 128 ON WAY START
+        notificationLayoutExpanded.setViewLayoutMargin(
+            R.id.zom_rider,
+            RemoteViews.MARGIN_START,
+            progress,
+            TypedValue.COMPLEX_UNIT_DIP
+        )
+        orderNotification.setCustomBigContentView(notificationLayoutExpanded)
+        notificationManager.notify(1, orderNotification.build())
     }
 
     private fun createNotification(): NotificationCompat.Builder {
@@ -38,21 +70,13 @@ class OrderTrackService : Service() {
         val channelName = "Foreground Service Channel"
         val notificationChannel =
             NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(notificationChannel)
-
-        // Get the layouts to use in the custom notification.
-        val notificationLayout = RemoteViews(packageName, R.layout.zomato_notification_small)
-        val notificationLayoutExpanded =
-            RemoteViews(packageName, R.layout.zomato_notification_expanded)
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-        // Apply the layouts to the notification.
         return NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_launcher_background)
-//            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
             .setCustomContentView(notificationLayout)
             .setCustomBigContentView(notificationLayoutExpanded)
             .setContentIntent(pendingIntent)
@@ -65,7 +89,7 @@ class OrderTrackService : Service() {
     override fun onCreate() {
         super.onCreate()
         registerReceiver(receiver, IntentFilter(ACTION), RECEIVER_EXPORTED)
-        val notification = createNotification().build()
+        val notification = orderNotification.build()
         startForeground(1, notification)
     }
 
