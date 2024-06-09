@@ -12,7 +12,7 @@ import android.os.IBinder
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
-import com.oddlyspaced.zomato.notification.MainActivity
+import com.oddlyspaced.zomato.notification.activity.MainActivity
 import com.oddlyspaced.zomato.notification.R
 
 /**

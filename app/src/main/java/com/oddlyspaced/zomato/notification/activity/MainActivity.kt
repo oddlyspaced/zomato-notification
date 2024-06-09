@@ -1,4 +1,4 @@
-package com.oddlyspaced.zomato.notification
+package com.oddlyspaced.zomato.notification.activity
 
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.content.Context
@@ -18,7 +18,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
