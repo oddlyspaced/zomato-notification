@@ -4,9 +4,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.MainActivity
 import com.oddlyspaced.zomato.notification.R
@@ -17,23 +17,28 @@ import com.oddlyspaced.zomato.notification.R
  **/
 class OrderTrackService : Service() {
     private fun createNotification(): NotificationCompat.Builder {
+        // Create the NotificationChannel, only for API 26+
         val channelId = "foreground_service_channel"
         val channelName = "Foreground Service Channel"
-
-        // Create the NotificationChannel, only for API 26+
         val notificationChannel =
-            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW)
+            NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(notificationChannel)
+
+        // Get the layouts to use in the custom notification.
+        val notificationLayout = RemoteViews(packageName, R.layout.zomato_notification_small)
+        val notificationLayoutExpanded =
+            RemoteViews(packageName, R.layout.zomato_notification_expanded)
 
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent =
             PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
-
+        // Apply the layouts to the notification.
         return NotificationCompat.Builder(this, channelId)
-            .setContentTitle("Foreground Service")
-            .setContentText("The service is running in the foreground")
             .setSmallIcon(R.drawable.ic_launcher_background)
+//            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(notificationLayout)
+            .setCustomBigContentView(notificationLayoutExpanded)
             .setContentIntent(pendingIntent)
     }
 
@@ -45,5 +50,9 @@ class OrderTrackService : Service() {
         super.onCreate()
         val notification = createNotification().build()
         startForeground(1, notification)
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return super.onStartCommand(intent, flags, startId)
     }
 }
