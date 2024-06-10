@@ -16,11 +16,14 @@ import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.activity.MainActivity
 import com.oddlyspaced.zomato.notification.R
 import com.oddlyspaced.zomato.notification.api.Api
+import com.oddlyspaced.zomato.notification.api.model.OrderStatus
+import com.oddlyspaced.zomato.notification.api.parseOrderResponse
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.lang.Exception
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
@@ -44,17 +47,6 @@ class OrderTrackService : Service() {
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
 
-    private fun repeatCor(orderId: Long) {
-        CoroutineScope(Dispatchers.IO).launch {
-            repeat(100) {
-                val tt = api.getOrderHistory()
-                Log.d(TAG, "Status = ${tt.status}")
-                setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
-                delay(100 * 10)
-            }
-        }
-    }
-
     // activity to service communication
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -65,17 +57,13 @@ class OrderTrackService : Service() {
                         TAG,
                         "Received intent = ${intent.action} $orderId"
                     )
-                    repeatCor(orderId)
-//                    setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
+                    setAndShowRiderProgress(orderId)
                 }
             }
         }
     }
 
-    private val orderIdProgressMap = hashMapOf<Long, Float>()
-    private val orderIdNotificationMap = hashMapOf<Long, NotificationCompat.Builder>()
-
-    private val notificationLayout by lazy {
+    private val notificationLayoutSmall by lazy {
         RemoteViews(
             packageName,
             R.layout.zomato_notification_small
@@ -85,26 +73,45 @@ class OrderTrackService : Service() {
         RemoteViews(packageName, R.layout.zomato_notification_expanded)
     }
 
-    private fun setAndShowRiderProgress(orderId: Long, progress: Float) {
+    private fun setAndShowRiderProgress(orderId: Long) {
         // 264 MAX
         // 0 MIN
         // 92 ARRIVED WHOLE
         // 128 ON WAY START
-
-        notificationLayoutExpanded.setViewLayoutMargin(
-            R.id.zom_rider,
-            RemoteViews.MARGIN_START,
-            (progress / 100) * 264,
-            TypedValue.COMPLEX_UNIT_DIP
-        )
-        orderIdProgressMap[orderId] = progress
-        orderIdNotificationMap[orderId] = createNotification()
-        orderIdNotificationMap[orderId]?.let {
-            it.setCustomBigContentView(notificationLayoutExpanded)
-            notificationManager.notify(
-                (orderId / 1000).toInt(),
-                it.build()
-            ) // todo: improve order id long -> int logic
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val orderResp = api.getOrderDetails(orderId)
+                val parsedDetails = parseOrderResponse(orderResp)
+                notificationLayoutSmall.apply {
+                    setTextViewText(
+                        R.id.zom_notification_title,
+                        "${parsedDetails.restaurantName} • ${parsedDetails.statusDesc}"
+                    )
+                }
+                notificationLayoutExpanded.apply {
+                    setTextViewText(R.id.zom_restaurant, parsedDetails.restaurantName)
+                    setTextViewText(R.id.zom_status_title, parsedDetails.statusDesc)
+                    setTextViewText(R.id.zom_status_type, parsedDetails.estimateTimeDesc)
+                    setTextViewText(R.id.zom_status_time, parsedDetails.estimatedTime)
+                }
+                // re use notification builder
+                createNotification().let {
+                    it.setCustomBigContentView(notificationLayoutExpanded)
+                    notificationManager.notify(
+                        (orderId / 1000).toInt(),
+                        it.build()
+                    ) // todo: improve order id long -> int logic
+                }
+                if (parsedDetails.status == OrderStatus.DELIVERED) {
+                    // done
+                } else {
+                    delay(100 * 30) // 30 secs
+                    setAndShowRiderProgress(orderId)
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Error occurred while fetching details = $orderId")
+                Log.d(TAG, e.stackTraceToString())
+            }
         }
     }
 
@@ -119,7 +126,7 @@ class OrderTrackService : Service() {
             PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_background)
-            .setCustomContentView(notificationLayout)
+            .setCustomContentView(notificationLayoutSmall)
             .setCustomBigContentView(notificationLayoutExpanded)
             .setContentIntent(pendingIntent)
     }

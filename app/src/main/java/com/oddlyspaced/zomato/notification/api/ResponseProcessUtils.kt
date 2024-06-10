@@ -27,9 +27,9 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
     val orderId = result.response.orderDetails.tagId
     val restaurantId = result.response.orderDetails.resId
     val status = OrderStatus.valueOf(result.response.orderDetails.status)
-    val estimatedTime = result.response.headerData.pillData?.leftData?.title?.text ?: ""
+    val estimatedTime = result.response.headerData.pillData?.leftData?.title?.text ?: "Enjoy your order!"
     val estimatedTimeDesc = result.response.headerData.subtitle2?.text ?: ""
-    val orderStatusDesc = result.response.headerData.pillData?.rightData?.title?.text ?: ""
+    val orderStatusDesc = result.response.headerData.pillData?.rightData?.title?.text ?: "Delivered"
     val mapData = result.response.mapData?.markers ?: arrayListOf()
     return OrderDetailsItem(
         orderId,
