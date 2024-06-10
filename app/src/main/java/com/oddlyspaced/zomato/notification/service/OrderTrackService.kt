@@ -93,6 +93,12 @@ class OrderTrackService : Service() {
                     setTextViewText(R.id.zom_status_title, parsedDetails.statusDesc)
                     setTextViewText(R.id.zom_status_type, parsedDetails.estimateTimeDesc)
                     setTextViewText(R.id.zom_status_time, parsedDetails.estimatedTime)
+                    setViewLayoutMargin(
+                        R.id.zom_rider,
+                        RemoteViews.MARGIN_START,
+                        parsedDetails.progressPadding,
+                        TypedValue.COMPLEX_UNIT_DIP
+                    )
                 }
                 // re use notification builder
                 createNotification().let {
