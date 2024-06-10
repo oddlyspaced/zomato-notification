@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.oddlyspaced.zomato.notification.api.Api
 import com.oddlyspaced.zomato.notification.api.model.OrderHistoryItem
 import com.oddlyspaced.zomato.notification.api.model.OrderHistorySnippet
+import com.oddlyspaced.zomato.notification.api.parseOrderHistoryResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,14 +64,4 @@ class MainViewModel @Inject constructor(private val api: Api) : ViewModel() {
             }
         }
     }
-}
-
-fun parseOrderHistoryResult(result: OrderHistorySnippet): OrderHistoryItem {
-    var title = result.topContainer.title.text
-    title = title.replace("<medium-400|{grey-900|", "").replace("}>", "")
-    var orderId = result.clickAction.deeplink.url
-    orderId = orderId.replace("zomato://delivery/", "").replace("zomato://order_summary/", "")
-    val orderStatus = result.topContainer.tag?.title?.text ?: "Unknown"
-    val orderTime = result.bottomContainer.title.text
-    return OrderHistoryItem(title, orderId, orderTime, orderStatus)
 }
