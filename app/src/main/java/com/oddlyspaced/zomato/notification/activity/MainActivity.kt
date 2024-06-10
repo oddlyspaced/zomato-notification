@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         NotificationSection(mainVM, requestNotifPerm)
-                        CommunicationSection(context = applicationContext)
+//                        CommunicationSection(context = applicationContext)
                         PostList(mainVM, context = applicationContext)
                     }
                 }
