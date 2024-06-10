@@ -1,7 +1,11 @@
 package com.oddlyspaced.zomato.notification.api
 
+import com.oddlyspaced.zomato.notification.api.model.MapData
+import com.oddlyspaced.zomato.notification.api.model.OrderDetailsItem
+import com.oddlyspaced.zomato.notification.api.model.OrderDetailsResponse
 import com.oddlyspaced.zomato.notification.api.model.OrderHistoryItem
 import com.oddlyspaced.zomato.notification.api.model.OrderHistorySnippet
+import com.oddlyspaced.zomato.notification.api.model.OrderStatus
 
 /**
  * @author : hardik
@@ -16,4 +20,25 @@ fun parseOrderHistoryResult(result: OrderHistorySnippet): OrderHistoryItem {
     val orderStatus = result.topContainer.tag?.title?.text ?: "Unknown"
     val orderTime = result.bottomContainer.title.text
     return OrderHistoryItem(title, orderId, orderTime, orderStatus)
+}
+
+fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
+    val restaurantName = result.response.orderDetails.restaurantName
+    val orderId = result.response.orderDetails.tagId
+    val restaurantId = result.response.orderDetails.resId
+    val status = OrderStatus.valueOf(result.response.orderDetails.status)
+    val estimatedTime = result.response.headerData.pillData?.leftData?.title?.text ?: ""
+    val estimatedTimeDesc = result.response.headerData.subtitle2?.text ?: ""
+    val orderStatusDesc = result.response.headerData.pillData?.rightData?.title?.text ?: ""
+    val mapData = result.response.mapData?.markers ?: arrayListOf()
+    return OrderDetailsItem(
+        orderId,
+        restaurantId,
+        status,
+        restaurantName,
+        estimatedTime,
+        estimatedTimeDesc,
+        orderStatusDesc,
+        mapData,
+    )
 }
