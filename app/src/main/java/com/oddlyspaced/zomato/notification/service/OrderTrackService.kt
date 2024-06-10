@@ -15,17 +15,25 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.activity.MainActivity
 import com.oddlyspaced.zomato.notification.R
+import com.oddlyspaced.zomato.notification.api.Api
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
 
 /**
  * @author : hardik
  * @created : 09/06/24, Sunday
  **/
+@AndroidEntryPoint
 class OrderTrackService : Service() {
+
+    @Inject
+    lateinit var api: Api
+
     companion object {
         private const val TAG = "OrderTrackService"
         const val ACTION = "OrderTrackAction"
@@ -39,8 +47,10 @@ class OrderTrackService : Service() {
     private fun repeatCor(orderId: Long) {
         CoroutineScope(Dispatchers.IO).launch {
             repeat(100) {
-                delay(100)
+                val tt = api.getOrderHistory()
+                Log.d(TAG, "Status = ${tt.status}")
                 setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
+                delay(100 * 10)
             }
         }
     }
@@ -91,7 +101,10 @@ class OrderTrackService : Service() {
         orderIdNotificationMap[orderId] = createNotification()
         orderIdNotificationMap[orderId]?.let {
             it.setCustomBigContentView(notificationLayoutExpanded)
-            notificationManager.notify((orderId / 1000).toInt(), it.build()) // todo: improve order id long -> int logic
+            notificationManager.notify(
+                (orderId / 1000).toInt(),
+                it.build()
+            ) // todo: improve order id long -> int logic
         }
     }
 
