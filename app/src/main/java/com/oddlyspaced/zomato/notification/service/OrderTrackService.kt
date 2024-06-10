@@ -15,6 +15,11 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.activity.MainActivity
 import com.oddlyspaced.zomato.notification.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 
 /**
  * @author : hardik
@@ -31,6 +36,15 @@ class OrderTrackService : Service() {
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
 
+    private fun repeatCor(orderId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            repeat(100) {
+                delay(100)
+                setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
+            }
+        }
+    }
+
     // activity to service communication
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -41,7 +55,8 @@ class OrderTrackService : Service() {
                         TAG,
                         "Received intent = ${intent.action} $orderId"
                     )
-                    setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
+                    repeatCor(orderId)
+//                    setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
                 }
             }
         }
@@ -69,7 +84,7 @@ class OrderTrackService : Service() {
         notificationLayoutExpanded.setViewLayoutMargin(
             R.id.zom_rider,
             RemoteViews.MARGIN_START,
-            progress,
+            (progress / 100) * 264,
             TypedValue.COMPLEX_UNIT_DIP
         )
         orderIdProgressMap[orderId] = progress
