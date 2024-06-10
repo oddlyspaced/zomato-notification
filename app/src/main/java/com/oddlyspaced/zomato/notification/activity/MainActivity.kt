@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -68,7 +70,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         NotificationSection(mainVM, requestNotifPerm)
                         CommunicationSection(context = applicationContext)
-                        PostList(mainVM)
+                        PostList(mainVM, context = applicationContext)
                     }
                 }
             }
@@ -114,7 +116,6 @@ fun CommunicationSection(
     Column {
         SectionTitle(text = "Service Controls")
         Button(onClick = {
-            context.sendBroadcast(Intent(OrderTrackService.ACTION))
         }, modifier = Modifier.padding(top = 8.dp)) {
             Text("Test Service Communication")
         }
@@ -124,6 +125,7 @@ fun CommunicationSection(
 @Composable
 fun PostList(
     vm: MainViewModel = viewModel(),
+    context: Context,
 ) {
     val orderHistory by vm.orderHistory.collectAsState()
     val orderHistoryFetchStatus by vm.orderHistoryFetchStatus.collectAsState()
@@ -158,21 +160,25 @@ fun PostList(
 
         Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             orderHistory.forEach {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.padding(top = 12.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(it.restaurant)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    Column {
+                        Text(it.restaurant)
                         Text(it.orderId)
+                        Text(it.orderTime)
+                    }
+                    Button(onClick = {
+                        context.sendBroadcast(Intent(OrderTrackService.ACTION).apply {
+                            putExtra(OrderTrackService.KEY_ORDER_ID, it.orderId.toLong())
+                        })
+                    }, modifier = Modifier.align(Alignment.CenterVertically)) {
                         Text(it.status)
                     }
-                    Text(it.orderTime)
                 }
-
             }
         }
     }

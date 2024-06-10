@@ -26,6 +26,7 @@ class OrderTrackService : Service() {
         const val ACTION = "OrderTrackAction"
         const val CHANNEL_ID = "foreground_service_channel"
         const val CHANNEL_NAME = "Foreground Service Channel"
+        const val KEY_ORDER_ID = "order_id"
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
@@ -33,13 +34,21 @@ class OrderTrackService : Service() {
     // activity to service communication
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            setAndShowRiderProgress(123, (orderIdProgressMap[123] ?: 0F) + 1)
-            Log.d(TAG, "Received intent = ${intent?.action}")
+            intent?.let {
+                val orderId = intent.extras?.getLong(KEY_ORDER_ID)
+                if (orderId != null) {
+                    Log.d(
+                        TAG,
+                        "Received intent = ${intent.action} $orderId"
+                    )
+                    setAndShowRiderProgress(orderId, (orderIdProgressMap[orderId] ?: 0F) + 1)
+                }
+            }
         }
     }
 
-    private val orderIdProgressMap = hashMapOf<Int, Float>()
-    private val orderIdNotificationMap = hashMapOf<Int, NotificationCompat.Builder>()
+    private val orderIdProgressMap = hashMapOf<Long, Float>()
+    private val orderIdNotificationMap = hashMapOf<Long, NotificationCompat.Builder>()
 
     private val notificationLayout by lazy {
         RemoteViews(
@@ -51,7 +60,7 @@ class OrderTrackService : Service() {
         RemoteViews(packageName, R.layout.zomato_notification_expanded)
     }
 
-    private fun setAndShowRiderProgress(orderId: Int, progress: Float) {
+    private fun setAndShowRiderProgress(orderId: Long, progress: Float) {
         // 264 MAX
         // 0 MIN
         // 92 ARRIVED WHOLE
@@ -67,7 +76,7 @@ class OrderTrackService : Service() {
         orderIdNotificationMap[orderId] = createNotification()
         orderIdNotificationMap[orderId]?.let {
             it.setCustomBigContentView(notificationLayoutExpanded)
-            notificationManager.notify(orderId, it.build())
+            notificationManager.notify((orderId / 1000).toInt(), it.build()) // todo: improve order id long -> int logic
         }
     }
 
