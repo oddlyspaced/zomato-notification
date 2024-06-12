@@ -90,9 +90,9 @@ class OrderTrackService : Service() {
                 }
                 notificationLayoutExpanded.apply {
                     setTextViewText(R.id.zom_restaurant, parsedDetails.restaurantName)
-                    setTextViewText(R.id.zom_status_title, parsedDetails.statusDesc)
-                    setTextViewText(R.id.zom_status_type, parsedDetails.estimateTimeDesc)
-                    setTextViewText(R.id.zom_status_time, parsedDetails.estimatedTime)
+                    setTextViewText(R.id.zom_status_title, parsedDetails.estimateTimeDesc)
+                    setTextViewText(R.id.zom_status_type, parsedDetails.statusDesc)
+                    setTextViewText(R.id.zom_status_time, " | " + parsedDetails.estimatedTime)
                     setViewLayoutMargin(
                         R.id.zom_rider,
                         RemoteViews.MARGIN_START,
