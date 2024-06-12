@@ -1,6 +1,8 @@
 package com.oddlyspaced.zomato.notification.api
 
+import android.content.ContentValues.TAG
 import android.location.Location
+import android.util.Log
 import com.oddlyspaced.zomato.notification.api.model.OrderDetailsItem
 import com.oddlyspaced.zomato.notification.api.model.OrderDetailsResponse
 import com.oddlyspaced.zomato.notification.api.model.OrderHistoryItem
@@ -50,7 +52,7 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
         result.response.headerData.pillData?.leftData?.title?.text ?: "Enjoy your order!"
     val orderStatusDesc = result.response.headerData.subtitle2?.text ?: ""
     val estimatedTimeDesc =
-        result.response.headerData.pillData?.rightData?.title?.text ?: "Delivered"
+        result.response.headerData.pillData?.rightData?.title?.text ?: (if (status == OrderStatus.ON_THE_WAY) "Almost there" else "Delivered")
     val mapData = result.response.mapData?.markers ?: arrayListOf()
 
     val mapDataRestaurant = mapData.filter {
@@ -80,6 +82,7 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
             val mapDataRider = mapData.filter {
                 it.type == "rider"
             }[0]
+
             val distRiderRest = abs(
                 distanceInMeter(
                     mapDataRider.latitude,
@@ -88,9 +91,12 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
                     mapDataRestaurant.longitude
                 )
             )
+
             // we assume max distance to be 3000m
             progress =
                 abs(((if (3000F - distRiderRest < 0) 0F else (3000F - distRiderRest)) / 3000) * (OrderTrackService.PROGRESS_REST_END - OrderTrackService.PROGRESS_REST_START))
+
+            Log.d(TAG, "Distance Assigned : $distRiderRest $progress")
         }
 
         OrderStatus.IN_KITCHEN_RIDER_ARRIVED -> {
@@ -105,13 +111,15 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
             val distRiderDest = abs(
                 distanceInMeter(
                     mapDataRider.latitude,
+
                     mapDataRider.longitude,
                     mapDataDestination.latitude,
                     mapDataDestination.longitude
                 )
             )
-            progress =
-                (abs((distRestDest - distRiderDest)) / distRestDest) * (OrderTrackService.PROGRESS_DEST_END - OrderTrackService.PROGRESS_DEST_START)
+
+            progress = OrderTrackService.PROGRESS_DEST_START + (abs(1 - (distRiderDest / distRestDest))) * (OrderTrackService.PROGRESS_DEST_END - OrderTrackService.PROGRESS_DEST_START)
+            Log.d(TAG, "ON WAY $distRestDest $distRiderDest $progress")
         }
 
         OrderStatus.DELIVERED -> {

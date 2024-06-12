@@ -93,6 +93,12 @@ class OrderTrackService : Service() {
                     )
                 }
                 notificationLayoutExpanded.apply {
+                    if (parsedDetails.status == OrderStatus.CONFIRMED || parsedDetails.status == OrderStatus.IN_KITCHEN_RIDER_NOT_ASSIGNED) {
+                        setImageViewBitmap(R.id.zom_rider, null)
+                    }
+                    else {
+                        setImageViewResource(R.id.zom_rider, R.drawable.ic_rider_ev)
+                    }
                     setTextViewText(R.id.zom_restaurant, parsedDetails.restaurantName)
                     setTextViewText(R.id.zom_status_title, parsedDetails.statusDesc)
                     setTextViewText(R.id.zom_status_type, parsedDetails.estimatedTimeDesc)
@@ -115,7 +121,7 @@ class OrderTrackService : Service() {
                 if (parsedDetails.status == OrderStatus.DELIVERED) {
                     // done
                 } else {
-                    delay(100 * 30) // 30 secs
+                    delay(30000) // 30 secs
                     setAndShowRiderProgress(orderId)
                 }
             } catch (e: Exception) {
@@ -143,6 +149,7 @@ class OrderTrackService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
+
     }
 
     override fun onCreate() {
