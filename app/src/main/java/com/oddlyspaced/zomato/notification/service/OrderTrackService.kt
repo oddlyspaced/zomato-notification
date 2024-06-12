@@ -43,6 +43,10 @@ class OrderTrackService : Service() {
         const val CHANNEL_ID = "foreground_service_channel"
         const val CHANNEL_NAME = "Foreground Service Channel"
         const val KEY_ORDER_ID = "order_id"
+        const val PROGRESS_DEST_END = 264F
+        const val PROGRESS_DEST_START = 128F
+        const val PROGRESS_REST_START = 0F
+        const val PROGRESS_REST_END = 92F
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
@@ -148,7 +152,8 @@ class OrderTrackService : Service() {
             NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
         notificationManager.createNotificationChannel(notificationChannel)
         val notification =
-            NotificationCompat.Builder(applicationContext, CHANNEL_ID).setContentTitle("Running").setSmallIcon(R.drawable.ic_checkpoint_restaurant).build()
+            NotificationCompat.Builder(applicationContext, CHANNEL_ID).setContentTitle("Running")
+                .setSmallIcon(R.drawable.ic_checkpoint_restaurant).build()
         startForeground(1, notification)
     }
 
@@ -160,7 +165,7 @@ class OrderTrackService : Service() {
         super.onDestroy()
         try {
             unregisterReceiver(receiver)
+        } catch (_: Exception) {
         }
-        catch (_: Exception){}
     }
 }
