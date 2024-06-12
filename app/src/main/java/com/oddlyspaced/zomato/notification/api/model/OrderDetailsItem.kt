@@ -6,6 +6,7 @@ package com.oddlyspaced.zomato.notification.api.model
  **/
 
 enum class OrderStatus(val orderStatus: String) {
+    CONFIRMED("CONFIRMED"),
     IN_KITCHEN_RIDER_NOT_ASSIGNED("IN_KITCHEN_RIDER_NOT_ASSIGNED"),
     IN_KITCHEN_RIDER_ASSIGNED("IN_KITCHEN_RIDER_ASSIGNED"),
     IN_KITCHEN_RIDER_ARRIVED("IN_KITCHEN_RIDER_ARRIVED"),
