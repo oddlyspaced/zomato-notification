@@ -15,12 +15,12 @@ enum class OrderStatus(val orderStatus: String) {
 }
 
 data class OrderDetailsItem(
-    val orderId: Long,
+    val id: Long,
     val restaurantId: Long,
     val status: OrderStatus,
     val restaurantName: String,
     val estimatedTime: String,
-    val estimateTimeDesc: String,
+    val estimatedTimeDesc: String,
     val statusDesc: String,
     val mapData: List<MapMarker>,
     val progressPadding: Float,

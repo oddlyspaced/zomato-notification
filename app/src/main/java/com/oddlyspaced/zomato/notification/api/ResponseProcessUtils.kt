@@ -28,8 +28,8 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
     val status = OrderStatus.valueOf(result.response.orderDetails.status)
     val estimatedTime =
         result.response.headerData.pillData?.leftData?.title?.text ?: "Enjoy your order!"
-    val estimatedTimeDesc = result.response.headerData.subtitle2?.text ?: ""
-    val orderStatusDesc = result.response.headerData.pillData?.rightData?.title?.text ?: "Delivered"
+    val orderStatusDesc = result.response.headerData.subtitle2?.text ?: ""
+    val estimatedTimeDesc = result.response.headerData.pillData?.rightData?.title?.text ?: "Delivered"
     val mapData = result.response.mapData?.markers ?: arrayListOf()
     var progress = 0F
     try {
