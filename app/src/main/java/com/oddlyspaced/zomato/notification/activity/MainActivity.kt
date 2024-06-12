@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.oddlyspaced.zomato.notification.api.model.OrderStatus
 import com.oddlyspaced.zomato.notification.service.OrderTrackService
 import com.oddlyspaced.zomato.notification.ui.theme.ZomatoNotificationTheme
 import com.oddlyspaced.zomato.notification.vm.MainViewModel
@@ -54,8 +57,6 @@ class MainActivity : ComponentActivity() {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                 mainVM.isNotificationPermissionGranted = isGranted
             }
-//        val serviceIntent = Intent(this, OrderTrackService::class.java)
-//        startForegroundService(serviceIntent)
 
         setContent {
             ZomatoNotificationTheme {
@@ -118,6 +119,7 @@ fun CommunicationSection(
         Button(onClick = {
             val serviceIntent = Intent(context, OrderTrackService::class.java)
             context.startForegroundService(serviceIntent)
+            Toast.makeText(context, "Service Started", Toast.LENGTH_SHORT).show()
         }, modifier = Modifier.padding(top = 8.dp)) {
             Text("Start Service")
         }
@@ -133,11 +135,11 @@ fun PostList(
     val orderHistoryFetchStatus by vm.orderHistoryFetchStatus.collectAsState()
 
     var launchEffectKey by remember {
-        mutableStateOf(false)
+        mutableIntStateOf(0)
     }
 
     LaunchedEffect(key1 = launchEffectKey) {
-        if (launchEffectKey) {
+        if (launchEffectKey > 0) {
             vm.fetchOrderHistory()
         }
     }
@@ -155,30 +157,43 @@ fun PostList(
             modifier = Modifier.padding(top = 8.dp)
         )
         Button(onClick = {
-            launchEffectKey = true
+            launchEffectKey += 1
         }, modifier = Modifier.padding(top = 4.dp)) {
             Text("Fetch Orders")
         }
 
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            orderHistory.forEach {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp, bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Column {
-                        Text(it.restaurant)
-                        Text(it.orderId)
-                        Text(it.orderTime)
-                    }
-                    Button(onClick = {
-                        context.sendBroadcast(Intent(OrderTrackService.ACTION).apply {
-                            putExtra(OrderTrackService.KEY_ORDER_ID, it.orderId.toLong())
-                        })
-                    }, modifier = Modifier.align(Alignment.CenterVertically)) {
-                        Text(it.status)
+        if (orderHistoryFetchStatus == MainViewModel.STATUS_FETCH_SUCCESS) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                orderHistory.filter {
+                    it.status != "Delivered"
+                }.let { orders ->
+                    if (orders.isEmpty()) {
+                        Text("No Active Orders!")
+                    } else {
+                        orders.forEach {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 8.dp, bottom = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Column {
+                                    Text(it.restaurant)
+                                    Text(it.orderId)
+                                    Text(it.orderTime)
+                                }
+                                Button(onClick = {
+                                    context.sendBroadcast(Intent(OrderTrackService.ACTION).apply {
+                                        putExtra(
+                                            OrderTrackService.KEY_ORDER_ID,
+                                            it.orderId.toLong()
+                                        )
+                                    })
+                                }, modifier = Modifier.align(Alignment.CenterVertically)) {
+                                    Text(it.status)
+                                }
+                            }
+                        }
                     }
                 }
             }
