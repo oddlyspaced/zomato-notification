@@ -54,8 +54,8 @@ class MainActivity : ComponentActivity() {
             registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
                 mainVM.isNotificationPermissionGranted = isGranted
             }
-        val serviceIntent = Intent(this, OrderTrackService::class.java)
-        startForegroundService(serviceIntent)
+//        val serviceIntent = Intent(this, OrderTrackService::class.java)
+//        startForegroundService(serviceIntent)
 
         setContent {
             ZomatoNotificationTheme {
@@ -69,7 +69,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         NotificationSection(mainVM, requestNotifPerm)
-//                        CommunicationSection(context = applicationContext)
+                        CommunicationSection(context = applicationContext)
                         PostList(mainVM, context = applicationContext)
                     }
                 }
@@ -116,8 +116,10 @@ fun CommunicationSection(
     Column {
         SectionTitle(text = "Service Controls")
         Button(onClick = {
+            val serviceIntent = Intent(context, OrderTrackService::class.java)
+            context.startForegroundService(serviceIntent)
         }, modifier = Modifier.padding(top = 8.dp)) {
-            Text("Test Service Communication")
+            Text("Start Service")
         }
     }
 }

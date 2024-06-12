@@ -144,12 +144,23 @@ class OrderTrackService : Service() {
     override fun onCreate() {
         super.onCreate()
         registerReceiver(receiver, IntentFilter(ACTION), RECEIVER_EXPORTED)
+        val notificationChannel =
+            NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
+        notificationManager.createNotificationChannel(notificationChannel)
         val notification =
-            NotificationCompat.Builder(this, CHANNEL_ID).setContentTitle("Running").build()
+            NotificationCompat.Builder(applicationContext, CHANNEL_ID).setContentTitle("Running").setSmallIcon(R.drawable.ic_checkpoint_restaurant).build()
         startForeground(1, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            unregisterReceiver(receiver)
+        }
+        catch (_: Exception){}
     }
 }
