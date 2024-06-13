@@ -22,6 +22,8 @@ data class OrderDetailsItem(
     val estimatedTime: String,
     val estimatedTimeDesc: String,
     val statusDesc: String,
-    val mapData: List<MapMarker>,
+    val restaurantMapData: MapMarker?,
+    val destinationMapData: MapMarker?,
+    val riderMapData: MapMarker?,
     val progressPadding: Float,
 )

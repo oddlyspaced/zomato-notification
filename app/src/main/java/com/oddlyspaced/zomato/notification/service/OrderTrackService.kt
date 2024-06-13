@@ -16,6 +16,7 @@ import androidx.core.app.NotificationCompat
 import com.oddlyspaced.zomato.notification.activity.MainActivity
 import com.oddlyspaced.zomato.notification.R
 import com.oddlyspaced.zomato.notification.api.Api
+import com.oddlyspaced.zomato.notification.api.model.MapMarker
 import com.oddlyspaced.zomato.notification.api.model.OrderStatus
 import com.oddlyspaced.zomato.notification.api.parseOrderResponse
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,6 +51,8 @@ class OrderTrackService : Service() {
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+    // initialise this later when a rider is assigned
+    private var originalRiderLocation: MapMarker? = null
 
     // activity to service communication
     private val receiver = object : BroadcastReceiver() {
@@ -85,7 +88,10 @@ class OrderTrackService : Service() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val orderResp = api.getOrderDetails(orderId)
-                val parsedDetails = parseOrderResponse(orderResp)
+                val parsedDetails = parseOrderResponse(orderResp, originalRiderLocation)
+                if (originalRiderLocation == null) {
+                    originalRiderLocation = parsedDetails.riderMapData
+                }
                 notificationLayoutSmall.apply {
                     setTextViewText(
                         R.id.zom_notification_title,
@@ -176,3 +182,5 @@ class OrderTrackService : Service() {
         }
     }
 }
+// use first loaded rider pos as min for rider progress
+// ensure that rider pos for otw is always increasing

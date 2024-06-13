@@ -3,6 +3,7 @@ package com.oddlyspaced.zomato.notification.api
 import android.content.ContentValues.TAG
 import android.location.Location
 import android.util.Log
+import com.oddlyspaced.zomato.notification.api.model.MapMarker
 import com.oddlyspaced.zomato.notification.api.model.OrderDetailsItem
 import com.oddlyspaced.zomato.notification.api.model.OrderDetailsResponse
 import com.oddlyspaced.zomato.notification.api.model.OrderHistoryItem
@@ -43,7 +44,14 @@ private fun distanceInMeter(
     return results[0]
 }
 
-fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
+fun distanceMapMarkers(mm1: MapMarker, mm2: MapMarker) =
+    abs(distanceInMeter(mm1.latitude, mm1.longitude, mm2.latitude, mm2.longitude))
+
+// mapDataRiderStart = first known location of the rider
+fun parseOrderResponse(
+    result: OrderDetailsResponse,
+    mapDataRiderStart: MapMarker? = null
+): OrderDetailsItem {
     val restaurantName = result.response.orderDetails.restaurantName
     val orderId = result.response.orderDetails.tagId
     val restaurantId = result.response.orderDetails.resId
@@ -52,24 +60,28 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
         result.response.headerData.pillData?.leftData?.title?.text ?: "Enjoy your order!"
     val orderStatusDesc = result.response.headerData.subtitle2?.text ?: ""
     val estimatedTimeDesc =
-        result.response.headerData.pillData?.rightData?.title?.text ?: (if (status == OrderStatus.ON_THE_WAY) "Almost there" else "Delivered")
+        result.response.headerData.pillData?.rightData?.title?.text
+            ?: (if (status == OrderStatus.ON_THE_WAY) "Almost there" else "Delivered")
     val mapData = result.response.mapData?.markers ?: arrayListOf()
 
+    // this would not be available if order delivered!!!
     val mapDataRestaurant = mapData.filter {
         it.type == "source"
-    }[0]
+    }.let {
+        if (it.isEmpty()) null else it[0]
+    }
+
     val mapDataDestination = mapData.filter {
         it.type == "destination"
-    }[0]
+    }.let {
+        if (it.isEmpty()) null else it[0]
+    }
 
-    val distRestDest = abs(
-        distanceInMeter(
-            mapDataRestaurant.latitude,
-            mapDataRestaurant.longitude,
-            mapDataDestination.latitude,
-            mapDataDestination.longitude
-        )
-    )
+    val mapDataRider = mapData.filter {
+        it.type == "rider"
+    }.let {
+        if (it.isEmpty()) null else it[0]
+    }
 
     var progress = 0F
 
@@ -79,47 +91,25 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
         }
 
         OrderStatus.IN_KITCHEN_RIDER_ASSIGNED -> {
-            val mapDataRider = mapData.filter {
-                it.type == "rider"
-            }[0]
-
-            val distRiderRest = abs(
-                distanceInMeter(
-                    mapDataRider.latitude,
-                    mapDataRider.longitude,
-                    mapDataRestaurant.latitude,
-                    mapDataRestaurant.longitude
-                )
-            )
-
-            // we assume max distance to be 3000m
-            progress =
-                abs(((if (3000F - distRiderRest < 0) 0F else (3000F - distRiderRest)) / 3000) * (OrderTrackService.PROGRESS_REST_END - OrderTrackService.PROGRESS_REST_START))
-
-            Log.d(TAG, "Distance Assigned : $distRiderRest $progress")
+            if (mapDataRestaurant != null && mapDataRider != null && mapDataRiderStart != null) {
+                val distRiderRestMax = distanceMapMarkers(mapDataRiderStart, mapDataRestaurant)
+                val distRiderRestCurrent = distanceMapMarkers(mapDataRider, mapDataRestaurant)
+                progress =
+                    OrderTrackService.PROGRESS_REST_START + abs(1 - (distRiderRestCurrent / distRiderRestMax)) * (OrderTrackService.PROGRESS_REST_END - OrderTrackService.PROGRESS_REST_START)
+            }
         }
 
         OrderStatus.IN_KITCHEN_RIDER_ARRIVED -> {
             progress = OrderTrackService.PROGRESS_REST_END
-
         }
 
         OrderStatus.ON_THE_WAY -> {
-            val mapDataRider = mapData.filter {
-                it.type == "rider"
-            }[0]
-            val distRiderDest = abs(
-                distanceInMeter(
-                    mapDataRider.latitude,
-
-                    mapDataRider.longitude,
-                    mapDataDestination.latitude,
-                    mapDataDestination.longitude
-                )
-            )
-
-            progress = OrderTrackService.PROGRESS_DEST_START + (abs(1 - (distRiderDest / distRestDest))) * (OrderTrackService.PROGRESS_DEST_END - OrderTrackService.PROGRESS_DEST_START)
-            Log.d(TAG, "ON WAY $distRestDest $distRiderDest $progress")
+            if (mapDataRestaurant != null && mapDataRider != null && mapDataDestination != null) {
+                val distRiderDest = distanceMapMarkers(mapDataRider, mapDataDestination)
+                val distRestDest = distanceMapMarkers(mapDataRestaurant, mapDataDestination)
+                progress =
+                    OrderTrackService.PROGRESS_DEST_START + abs(1 - (distRiderDest / distRestDest)) * (OrderTrackService.PROGRESS_DEST_END - OrderTrackService.PROGRESS_DEST_START)
+            }
         }
 
         OrderStatus.DELIVERED -> {
@@ -135,7 +125,9 @@ fun parseOrderResponse(result: OrderDetailsResponse): OrderDetailsItem {
         estimatedTime,
         estimatedTimeDesc,
         orderStatusDesc,
-        mapData,
+        mapDataRestaurant,
+        mapDataDestination,
+        mapDataRider,
         progress
     )
 }
