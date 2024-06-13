@@ -51,6 +51,7 @@ class OrderTrackService : Service() {
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+
     // initialise this later when a rider is assigned
     private var originalRiderLocation: MapMarker? = null
 
@@ -101,8 +102,7 @@ class OrderTrackService : Service() {
                 notificationLayoutExpanded.apply {
                     if (parsedDetails.status == OrderStatus.CONFIRMED || parsedDetails.status == OrderStatus.IN_KITCHEN_RIDER_NOT_ASSIGNED) {
                         setImageViewBitmap(R.id.zom_rider, null)
-                    }
-                    else {
+                    } else {
                         setImageViewResource(R.id.zom_rider, R.drawable.ic_rider_ev)
                     }
                     setTextViewText(R.id.zom_restaurant, parsedDetails.restaurantName)
@@ -120,9 +120,9 @@ class OrderTrackService : Service() {
                 createNotification().let {
                     it.setCustomBigContentView(notificationLayoutExpanded)
                     notificationManager.notify(
-                        (orderId / 1000).toInt(),
+                        ((orderId.toString().reversed().toLong()) / 1000).toInt(),
                         it.build()
-                    ) // todo: improve order id long -> int logic
+                    )
                 }
                 if (parsedDetails.status == OrderStatus.DELIVERED) {
                     // done
