@@ -179,7 +179,9 @@ fun PostList(
                             ) {
                                 Column {
                                     Text(it.restaurant)
-                                    Text(it.orderId)
+                                    Text(it.orderId.let {
+                                        it.substring(0, it.length - 4) + "****"
+                                    })
                                     Text(it.orderTime)
                                 }
                                 Button(onClick = {
