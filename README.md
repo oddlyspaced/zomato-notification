@@ -1,7 +1,7 @@
 ## Zomato - Order Tracking Notification
 Inspired by iOS Activity Indicator.
 
-### Read more about it here : <todo>
+### Read more about it here : https://medium.com/@srivastavahardik/how-i-reverse-engineered-the-zomato-app-to-build-my-own-order-tracking-notification-system-22289a68dcb2
 
 ### Watch it in action here : https://youtu.be/E89Etnvq6rY
 
